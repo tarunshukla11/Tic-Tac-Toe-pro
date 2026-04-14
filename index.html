@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ludo Game</title>
+
+<style>
+body {
+  text-align: center;
+  background: #1f1c2c;
+  color: white;
+  font-family: Arial;
+}
+
+h1 { margin: 10px; }
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(5, 60px);
+  gap: 8px;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.cell {
+  width: 60px;
+  height: 60px;
+  background: #444;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.player0 { background: red; }
+.player1 { background: yellow; }
+.player2 { background: green; }
+.player3 { background: cyan; }
+
+.active {
+  outline: 3px solid white;
+  animation: pulse 0.5s infinite alternate;
+}
+
+@keyframes pulse {
+  from { transform: scale(1); }
+  to { transform: scale(1.1); }
+}
+
+button, select {
+  margin-top: 10px;
+  padding: 10px;
+  font-size: 16px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Simple Ludo</h1>
+
+<!-- PLAYER SELECT -->
+<select id="playerSelect">
+  <option value="2">2 Players</option>
+  <option value="3">3 Players</option>
+  <option value="4">4 Players</option>
+</select>
+
+<button onclick="startGame()">Start Game</button>
+
+<div id="status"></div>
+
+<div class="board" id="board"></div>
+
+<button onclick="rollDice()">Roll Dice</button>
+
+<script>
+const SIZE = 20;
+let path = [];
+let positions = [];
+let currentPlayer = 0;
+let totalPlayers = 2;
+let dice = 0;
+let running = false;
+
+const board = document.getElementById("board");
+const statusText = document.getElementById("status");
+
+// SOUND
+function playSound(freq) {
+  let ctx = new AudioContext();
+  let osc = ctx.createOscillator();
+  osc.frequency.value = freq;
+  osc.connect(ctx.destination);
+  osc.start();
+  setTimeout(()=>osc.stop(), 100);
+}
+
+// START GAME
+function startGame() {
+  totalPlayers = parseInt(document.getElementById("playerSelect").value);
+  positions = new Array(totalPlayers).fill(0);
+  currentPlayer = 0;
+  running = true;
+
+  statusText.textContent = `Player 1 turn`;
+  createBoard();
+}
+
+// CREATE BOARD
+function createBoard() {
+  board.innerHTML = "";
+  path = [];
+
+  for (let i = 0; i < SIZE; i++) {
+    let cell = document.createElement("div");
+    cell.classList.add("cell");
+    board.appendChild(cell);
+    path.push(cell);
+  }
+
+  updateUI();
+}
+
+// ROLL DICE
+function rollDice() {
+  if (!running) return;
+
+  dice = Math.floor(Math.random() * 6) + 1;
+  playSound(300);
+  movePlayer();
+}
+
+// MOVE PLAYER
+function movePlayer() {
+  let pos = positions[currentPlayer];
+  let newPos = pos + dice;
+
+  if (newPos >= SIZE) {
+    statusText.textContent = `Player ${currentPlayer+1} Wins!`;
+    playSound(600);
+    running = false;
+    return;
+  }
+
+  animateMove(pos, newPos, currentPlayer);
+  positions[currentPlayer] = newPos;
+
+  currentPlayer = (currentPlayer + 1) % totalPlayers;
+  statusText.textContent = `Player ${currentPlayer+1} turn`;
+}
+
+// ANIMATION
+function animateMove(start, end, player) {
+  let step = start;
+
+  let interval = setInterval(() => {
+    if (step > end) {
+      clearInterval(interval);
+      return;
+    }
+
+    positions[player] = step;
+    updateUI();
+    playSound(200 + step * 10);
+    step++;
+
+  }, 150);
+}
+
+// UPDATE UI
+function updateUI() {
+  path.forEach(cell => {
+    cell.className = "cell";
+    cell.textContent = "";
+  });
+
+  positions.forEach((pos, index) => {
+    path[pos].classList.add(`player${index}`);
+    path[pos].textContent += `P${index+1} `;
+  });
+
+  path[positions[currentPlayer]].classList.add("active");
+}
+
+</script>
+
+</body>
+</html>
